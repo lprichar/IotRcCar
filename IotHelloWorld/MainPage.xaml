@@ -12,6 +12,11 @@
             <TextBlock x:Name="StatusMessage" HorizontalAlignment="Center">No Status</TextBlock>
             <Button x:Name="ClickMe" Content="Click Me" Margin="10" HorizontalAlignment="Center" Click="ClickMe_Click"></Button>
         </StackPanel>
-        <Slider x:Name="slider" ValueChanged="Slider_OnValueChanged" Minimum="0" Maximum="100" />
+        <StackPanel VerticalAlignment="Top">
+            <TextBlock>Motor Speed</TextBlock>
+            <Slider x:Name="motorSpeed" ValueChanged="MotorSpeed_OnValueChanged" Minimum="0" Maximum="100" />
+            <TextBlock>Servo Rotation</TextBlock>
+            <Slider x:Name="servoRotation" ValueChanged="ServoRotation_OnValueChanged" Minimum="0" Maximum="100" />
+        </StackPanel>
     </Grid>
 </Page>

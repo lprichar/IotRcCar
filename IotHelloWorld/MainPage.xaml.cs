@@ -1,10 +1,12 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Globalization;
 using System.Threading.Tasks;
 using Windows.Devices;
 using Windows.Devices.Gpio;
 using Windows.Devices.Pwm;
 using Windows.Storage;
+using Windows.System.Threading;
 using Windows.UI.Core;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
@@ -25,8 +27,13 @@ namespace IotHelloWorld
         private int LED_PIN = 21;
         private GpioPinValue pinValue;
         private PwmController pwmController;
+        private GpioController gpioController;
         private PwmPin motorPin;
+        private GpioPin _servoPin;
         double RestingPulseLegnth = 0;
+        private const int DelayBetweenPulsesInMs = 5; // the documentation said 25-50ms, but smaller numbers seemed smoother
+        const int MinPulseInMicroseconds = 700;
+        const int MaxPulseInMicroseconds = 2100;
 
         public MainPage()
         {
@@ -64,6 +71,11 @@ namespace IotHelloWorld
             {
                 // Do something with the Lightning providers
                 LowLevelDevicesController.DefaultProvider = LightningProvider.GetAggregateProvider();
+
+                gpioController = await GpioController.GetDefaultAsync();
+                _servoPin = gpioController.OpenPin(5);
+                _servoPin.Write(GpioPinValue.Low);
+                _servoPin.SetDriveMode(GpioPinDriveMode.Output);
 
                 pwmController = (await PwmController.GetControllersAsync(LightningPwmProvider.GetPwmProvider()))[1];
                 motorPin = pwmController.OpenPin(5);
@@ -105,16 +117,51 @@ namespace IotHelloWorld
             StatusMessage.Text = "Hello, Windows IoT Core!";
         }
 
-        private void Slider_OnValueChanged(object sender, RangeBaseValueChangedEventArgs e)
+        private void MotorSpeed_OnValueChanged(object sender, RangeBaseValueChangedEventArgs e)
         {
-            StatusMessage.Text = slider.Value.ToString(CultureInfo.InvariantCulture);
+            StatusMessage.Text = motorSpeed.Value.ToString(CultureInfo.InvariantCulture);
 
-            SetMotorSpeed(slider.Value * .01);
+            SetMotorSpeed(motorSpeed.Value * .01);
         }
 
         private void SetMotorSpeed(double percent)
         {
             motorPin.SetActiveDutyCyclePercentage(percent);
+        }
+
+        private async Task ServoGoTo(double rotationPercent)
+        {
+            long microsecondsDelay = RotationToMicrosecondsDelay(rotationPercent);
+            var ticsInASecond = Stopwatch.Frequency;
+            var ticsInAMicrosecond = ticsInASecond / (1000L * 1000L);
+            var pulseDurationInTics = microsecondsDelay * ticsInAMicrosecond;
+
+            await ThreadPool.RunAsync(async source =>
+            {
+                var operationStopwatch = Stopwatch.StartNew();
+                var pulseStopwatch = new Stopwatch();
+                while (operationStopwatch.ElapsedMilliseconds < 500)
+                {
+                    pulseStopwatch.Reset();
+                    pulseStopwatch.Start();
+                    _servoPin.Write(GpioPinValue.High);
+                    while (pulseStopwatch.ElapsedTicks < pulseDurationInTics) { }
+                    _servoPin.Write(GpioPinValue.Low);
+                    await Task.Delay(DelayBetweenPulsesInMs);
+                }
+            }, WorkItemPriority.High);
+        }
+
+        private static long RotationToMicrosecondsDelay(double percent)
+        {
+            var percentAsDouble = percent * .01;
+            return (long)(percentAsDouble * (MaxPulseInMicroseconds - MinPulseInMicroseconds)) + MinPulseInMicroseconds;
+        }
+
+        private async void ServoRotation_OnValueChanged(object sender, RangeBaseValueChangedEventArgs e)
+        {
+            var percent = servoRotation.Value;
+            await ServoGoTo(percent);
         }
     }
 }
