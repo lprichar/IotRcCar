@@ -2,10 +2,44 @@
 
 <html lang="en" xmlns="http://www.w3.org/1999/xhtml">
 <head>
-    <meta charset="utf-8" />
-    <title></title>
+	<meta charset="utf-8"/>
+	<title></title>
 </head>
-<body>
-    Hello World From Resource
+<body onload="documentOnLoad()">
+
+<form action="Default.html" method="get" id="defaultForm">
+	<h2>Motor Speed</h2>
+	<span id="motorSpeedText">0</span>
+	<div style="padding-right: 100px;">
+	<input type="range" name="motorSpeed" id="motorSpeed" min="0" max="100" value="0" style="width: 100%;" onchange="engineChanged();"/>
+    </div>
+</form>
+
+<script type="text/javascript">
+    function documentOnLoad() {
+        debugger;
+        var motorSpeed = getParameterByName('motorSpeed');
+        document.getElementById('motorSpeed').value = motorSpeed;
+        document.getElementById('motorSpeedText').innerHTML = motorSpeed;
+    }
+
+    function getParameterByName(name, url) {
+        if (!url) url = window.location.href;
+        url = url.toLowerCase(); // This is just to avoid case sensitiveness  
+        name = name.replace(/[\[\]]/g, "\\$&").toLowerCase();// This is just to avoid case sensitiveness for query parameter name
+        var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
+            results = regex.exec(url);
+        if (!results) return null;
+        if (!results[2]) return '';
+        return decodeURIComponent(results[2].replace(/\+/g, " "));
+    }
+
+    function engineChanged() {
+        var value = document.getElementById('motorSpeed').value;
+        document.getElementById('motorSpeedText').innerHTML = value;
+        document.getElementById('defaultForm').submit();
+    }
+</script>
+
 </body>
 </html>

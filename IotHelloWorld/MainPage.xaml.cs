@@ -4,6 +4,8 @@ using System.Threading.Tasks;
 using Windows.Devices;
 using Windows.Devices.Gpio;
 using Windows.Devices.Pwm;
+using Windows.Storage;
+using Windows.UI.Core;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Controls.Primitives;
@@ -30,11 +32,25 @@ namespace IotHelloWorld
         {
             InitializeComponent();
 
-            //timer = new DispatcherTimer();
-            //timer.Interval = TimeSpan.FromMilliseconds(500);
-            //timer.Tick += TimerOnTick;
-            this.Loaded += OnLoaded;
+            Loaded += OnLoaded;
+            ApplicationData.Current.DataChanged += async (d, a) => await HandleDataChangedEvent(d, a);
+        }
 
+        private async Task HandleDataChangedEvent(ApplicationData sender, object args)
+        {
+            var localSettings = ApplicationData.Current.LocalSettings;
+            if (!localSettings.Values.ContainsKey("MotorSpeed"))
+            {
+                return;
+            }
+
+            string motorSpeed = localSettings.Values["MotorSpeed"] as string;
+            int motorSpeedInt = int.Parse(motorSpeed);
+            await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+            {
+                SetMotorSpeed(motorSpeedInt * .01);
+                StatusMessage.Text = "Motor Speed Changed to: " + motorSpeed;
+            });
         }
 
         private async void OnLoaded(object sender, RoutedEventArgs routedEventArgs)
@@ -84,11 +100,6 @@ namespace IotHelloWorld
             StatusMessage.Text = "GPIO initialized successfully";
         }
 
-        private void TimerOnTick(object sender, object o)
-        {
-            
-        }
-
         private void ClickMe_Click(object sender, RoutedEventArgs e)
         {
             StatusMessage.Text = "Hello, Windows IoT Core!";
@@ -98,7 +109,12 @@ namespace IotHelloWorld
         {
             StatusMessage.Text = slider.Value.ToString(CultureInfo.InvariantCulture);
 
-            motorPin.SetActiveDutyCyclePercentage(slider.Value * .01);
+            SetMotorSpeed(slider.Value * .01);
+        }
+
+        private void SetMotorSpeed(double percent)
+        {
+            motorPin.SetActiveDutyCyclePercentage(percent);
         }
     }
 }
