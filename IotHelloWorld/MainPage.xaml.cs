@@ -73,7 +73,7 @@ namespace IotHelloWorld
                 LowLevelDevicesController.DefaultProvider = LightningProvider.GetAggregateProvider();
 
                 gpioController = await GpioController.GetDefaultAsync();
-                _servoPin = gpioController.OpenPin(5);
+                _servoPin = gpioController.OpenPin(22);
                 _servoPin.Write(GpioPinValue.Low);
                 _servoPin.SetDriveMode(GpioPinDriveMode.Output);
 
@@ -82,7 +82,6 @@ namespace IotHelloWorld
                 pwmController.SetDesiredFrequency(50);
                 motorPin.SetActiveDutyCyclePercentage(RestingPulseLegnth);
                 motorPin.Start();
-                //motorPin.SetActiveDutyCyclePercentage(.5);
             }
             else
             {
