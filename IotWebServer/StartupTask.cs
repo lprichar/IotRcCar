@@ -28,7 +28,7 @@ namespace IotWebServer
             // Get the deferral object from the task instance
             serviceDeferral = taskInstance.GetDeferral();
 
-            _httpServer = new HttpServer(8000);
+            _httpServer = new HttpServer(8001);
             _httpServer.StartServer();
         }
     }
