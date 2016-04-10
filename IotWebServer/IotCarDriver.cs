@@ -66,7 +66,7 @@ namespace IotWebServer
 
         private static long RotationToMicrosecondsDelay(double percent)
         {
-            var percentAsDouble = percent * .01;
+            var percentAsDouble = percent;
             return (long)(percentAsDouble * (MaxPulseInMicroseconds - MinPulseInMicroseconds)) + MinPulseInMicroseconds;
         }
 
