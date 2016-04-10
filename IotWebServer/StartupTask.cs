@@ -28,6 +28,11 @@ namespace IotWebServer
             _httpServer.OnDirectionChange += HttpServerOnOnDirectionChange;
         }
 
+        ~StartupTask()
+        {
+            _iotCarDriver.Stop();
+        }
+
         private async void HttpServerOnOnDirectionChange(object sender, OnDirectionChangeArgs args)
         {
             await _iotCarDriver.ServoGoToAction(args.NewDirection);

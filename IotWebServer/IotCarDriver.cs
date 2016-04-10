@@ -78,7 +78,7 @@ namespace IotWebServer
                 LowLevelDevicesController.DefaultProvider = LightningProvider.GetAggregateProvider();
 
                 _gpioController = await GpioController.GetDefaultAsync();
-                _servoPin = _gpioController.OpenPin(22);
+                _servoPin = _gpioController.OpenPin(22, GpioSharingMode.Exclusive);
                 _servoPin.Write(GpioPinValue.Low);
                 _servoPin.SetDriveMode(GpioPinDriveMode.Output);
 
@@ -95,5 +95,9 @@ namespace IotWebServer
 
         }
 
+        public void Stop()
+        {
+            _motorPin.Stop();
+        }
     }
 }
