@@ -8,6 +8,9 @@
 <body onload="documentOnLoad()">
 
 <form action="Default.html" method="get" id="defaultForm">
+	<h2>Direction</h2>
+	<span id="directionText">0</span>
+	<input type="range" name="direction" id="direction" min="0" max="100" value="0" style="width: 100%;" onchange="directionChanged();"/>
 	<h2>Motor Speed</h2>
 	<span id="motorSpeedText">0</span>
 	<div style="padding-right: 100px;">
@@ -17,10 +20,12 @@
 
 <script type="text/javascript">
     function documentOnLoad() {
-        debugger;
         var motorSpeed = getParameterByName('motorSpeed');
+        var direction = getParameterByName('direction');
         document.getElementById('motorSpeed').value = motorSpeed;
         document.getElementById('motorSpeedText').innerHTML = motorSpeed;
+        document.getElementById('direction').value = direction;
+        document.getElementById('directionText').innerHTML = direction;
     }
 
     function getParameterByName(name, url) {
@@ -37,6 +42,12 @@
     function engineChanged() {
         var value = document.getElementById('motorSpeed').value;
         document.getElementById('motorSpeedText').innerHTML = value;
+        document.getElementById('defaultForm').submit();
+    }
+
+    function directionChanged() {
+        var value = document.getElementById('direction').value;
+        document.getElementById('directionText').innerHTML = value;
         document.getElementById('defaultForm').submit();
     }
 </script>

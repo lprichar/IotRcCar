@@ -96,6 +96,8 @@
     <None Include="project.json" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="HttpServer.cs" />
+    <Compile Include="IotCarDriver.cs" />
     <Compile Include="StartupTask.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
@@ -129,6 +131,17 @@
     <Content Include="Assets\Wide310x150Logo.scale-200.png">
       <InProject>false</InProject>
     </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <SDKReference Include="WindowsIoT, Version=10.0.10586.0">
+      <Name>Windows IoT Extensions for the UWP</Name>
+    </SDKReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Providers\Microsoft.Iot.Lightning.Providers.vcxproj">
+      <Project>{46a913d5-f809-4026-9dc9-cf94f643a0fe}</Project>
+      <Name>Microsoft.IoT.Lightning.Providers</Name>
+    </ProjectReference>
   </ItemGroup>
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '14.0' ">
     <VisualStudioVersion>14.0</VisualStudioVersion>
