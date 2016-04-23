@@ -8,11 +8,14 @@
     mc:Ignorable="d">
 
     <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
-        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-            <TextBlock x:Name="StatusMessage" HorizontalAlignment="Center">No Status</TextBlock>
-            <Button x:Name="ClickMe" Content="Click Me" Margin="10" HorizontalAlignment="Center" Click="ClickMe_Click"></Button>
+        <StackPanel HorizontalAlignment="Stretch" VerticalAlignment="Center">
+            <TextBlock x:Name="StatusMessage" HorizontalAlignment="Center">Welcome to Windows IoT!</TextBlock>
+            <Button x:Name="ClickMe" Content="Click Me, Blink an LED" Margin="10" HorizontalAlignment="Center" Click="ClickMe_Click"></Button>
+            <TextBlock HorizontalAlignment="Center">Or better yet, fade an LED with PWM:</TextBlock>
+            <Slider x:Name="ledBrightness" ValueChanged="LedBrightness_OnValueChanged" Minimum="0" Maximum="100" VerticalAlignment="Center" />
+            <TextBlock HorizontalAlignment="Center" x:Name="ledPercent">0%</TextBlock>
         </StackPanel>
-        <StackPanel VerticalAlignment="Top">
+        <StackPanel VerticalAlignment="Top" Visibility="Collapsed">
             <TextBlock>Motor Speed</TextBlock>
             <Slider x:Name="motorSpeed" ValueChanged="MotorSpeed_OnValueChanged" Minimum="0" Maximum="100" />
             <TextBlock>Servo Rotation</TextBlock>

@@ -23,13 +23,11 @@ namespace IotHelloWorld
     public sealed partial class MainPage : Page
     {
         private DispatcherTimer timer;
-        private GpioPin pin;
         private int LED_PIN = 21;
         private GpioPinValue pinValue;
-        private PwmController pwmController;
-        private GpioController gpioController;
         private PwmPin motorPin;
-        private GpioPin _servoPin;
+        private GpioPin _pin;
+        private PwmPin _pin27;
         double RestingPulseLegnth = 0;
         private const int DelayBetweenPulsesInMs = 5; // the documentation said 25-50ms, but smaller numbers seemed smoother
         const int MinPulseInMicroseconds = 700;
@@ -72,48 +70,57 @@ namespace IotHelloWorld
                 // Do something with the Lightning providers
                 LowLevelDevicesController.DefaultProvider = LightningProvider.GetAggregateProvider();
 
-                gpioController = await GpioController.GetDefaultAsync();
-                _servoPin = gpioController.OpenPin(22);
-                _servoPin.Write(GpioPinValue.Low);
-                _servoPin.SetDriveMode(GpioPinDriveMode.Output);
+                var pwmControllers = await PwmController.GetControllersAsync(LightningPwmProvider.GetPwmProvider());
+                var pwmController = pwmControllers[1]; // the on-device controller
+                pwmController.SetDesiredFrequency(50); // try to match 50Hz
 
-                pwmController = (await PwmController.GetControllersAsync(LightningPwmProvider.GetPwmProvider()))[1];
+                _pin27 = pwmController.OpenPin(22);
+                _pin27.SetActiveDutyCyclePercentage(.25);
+                _pin27.Start();
+
                 motorPin = pwmController.OpenPin(5);
-                pwmController.SetDesiredFrequency(50);
                 motorPin.SetActiveDutyCyclePercentage(RestingPulseLegnth);
                 motorPin.Start();
+
+
             }
             else
             {
                 StatusMessage.Text = "Please enable lightning providers";
-                //InitializeGpioDefaultProvider();
             }
 
-        }
-
-        private void InitializeGpioDefaultProvider()
-        {
-            var gpio = GpioController.GetDefault();
-
-            // Show an error if there is no GPIO controller
-            if (gpio == null)
+            var gpioController = await GpioController.GetDefaultAsync();
+            if (gpioController == null)
             {
-                pin = null;
                 StatusMessage.Text = "There is no GPIO controller on this device.";
                 return;
             }
-
-            pin = gpio.OpenPin(LED_PIN, GpioSharingMode.Exclusive);
-            pin.SetDriveMode(GpioPinDriveMode.Output);
-            pinValue = GpioPinValue.High;
-            pin.Write(pinValue);
-
-            StatusMessage.Text = "GPIO initialized successfully";
+            _pin = gpioController.OpenPin(22);
+            _pin.SetDriveMode(GpioPinDriveMode.Output);
+            _pin.Write(GpioPinValue.High);
+            await Task.Delay(500);
+            _pin.Write(GpioPinValue.Low);
         }
 
-        private void ClickMe_Click(object sender, RoutedEventArgs e)
+        private void LedBrightness_OnValueChanged(object sender, RangeBaseValueChangedEventArgs e)
         {
-            StatusMessage.Text = "Hello, Windows IoT Core!";
+            _pin27.SetActiveDutyCyclePercentage(ledBrightness.Value * .01);
+            ledPercent.Text = ledBrightness.Value + "%";
+        }
+        private async void ClickMe_Click(object sender, RoutedEventArgs e)
+        {
+            _pin.Write(GpioPinValue.High);
+
+            for (double percent = 0; percent <= 1; percent += .01)
+            {
+                _pin27.SetActiveDutyCyclePercentage(percent);
+                await Task.Delay(20);
+            }
+            for (double percent = 1; percent >= 0; percent -= .01)
+            {
+                _pin27.SetActiveDutyCyclePercentage(percent);
+                await Task.Delay(20);
+            }
         }
 
         private void MotorSpeed_OnValueChanged(object sender, RangeBaseValueChangedEventArgs e)
@@ -143,9 +150,9 @@ namespace IotHelloWorld
                 {
                     pulseStopwatch.Reset();
                     pulseStopwatch.Start();
-                    _servoPin.Write(GpioPinValue.High);
+                    _pin.Write(GpioPinValue.High);
                     while (pulseStopwatch.ElapsedTicks < pulseDurationInTics) { }
-                    _servoPin.Write(GpioPinValue.Low);
+                    _pin.Write(GpioPinValue.Low);
                     await Task.Delay(DelayBetweenPulsesInMs);
                 }
             }, WorkItemPriority.High);
