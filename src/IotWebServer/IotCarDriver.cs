@@ -20,6 +20,8 @@ namespace IotWebServer
         private const int DelayBetweenPulsesInMs = 5; // the documentation said 25-50ms, but smaller numbers seemed smoother
         const int MinPulseInMicroseconds = 700;
         const int MaxPulseInMicroseconds = 2100;
+        private int _servoPinNum = 26;
+        private int _motorPinNumber = 21;
 
         public IAsyncAction InitGpioAsync()
         {
@@ -78,12 +80,12 @@ namespace IotWebServer
                 LowLevelDevicesController.DefaultProvider = LightningProvider.GetAggregateProvider();
 
                 _gpioController = await GpioController.GetDefaultAsync();
-                _servoPin = _gpioController.OpenPin(22, GpioSharingMode.Exclusive);
+                _servoPin = _gpioController.OpenPin(_servoPinNum, GpioSharingMode.Exclusive);
                 _servoPin.Write(GpioPinValue.Low);
                 _servoPin.SetDriveMode(GpioPinDriveMode.Output);
 
                 _pwmController = (await PwmController.GetControllersAsync(LightningPwmProvider.GetPwmProvider()))[1];
-                _motorPin = _pwmController.OpenPin(5);
+                _motorPin = _pwmController.OpenPin(_motorPinNumber);
                 _pwmController.SetDesiredFrequency(50);
                 _motorPin.SetActiveDutyCyclePercentage(0);
                 _motorPin.Start();
