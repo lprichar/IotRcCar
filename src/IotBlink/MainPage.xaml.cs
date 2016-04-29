@@ -17,6 +17,8 @@ using Windows.UI.Xaml.Media;
 using Windows.UI.Xaml.Navigation;
 using Windows.Devices.Gpio;
 using Windows.Devices.Pwm;
+using Windows.UI.Core;
+using Microsoft.AspNet.SignalR.Client;
 using Microsoft.IoT.Lightning.Providers;
 
 // The Blank Page item template is documented at http://go.microsoft.com/fwlink/?LinkId=402352&clcid=0x409
@@ -50,6 +52,7 @@ namespace IotBlink
                 pin.SetActiveDutyCyclePercentage(0);
                 pin.Start();
                 await Pulse(pin);
+                await StartRealtimeConnection();
             }
             catch (Exception ex)
             {
@@ -69,6 +72,38 @@ namespace IotBlink
                 pin.SetActiveDutyCyclePercentage(percent);
                 await Task.Delay(20);
             }
+        }
+
+        private HubConnection _connection;
+        private IHubProxy _proxy;
+
+        private async Task StartRealtimeConnection()
+        {
+            try
+            {
+                _connection = new HubConnection("http://sirenofshame.com");
+                _connection.Error += Connection_Error;
+                _proxy = _connection.CreateHubProxy("SosHub");
+                _proxy.On<string>("addNotification", OnAddNotification);
+                await _connection.Start();
+            }
+            catch (Exception ex)
+            {
+                Message.Text = ex.Message;
+            }
+        }
+
+        private void Connection_Error(Exception obj)
+        {
+            Message.Text = obj.Message;
+        }
+
+        private async void OnAddNotification(string message)
+        {
+            await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+            {
+                Message.Text = message;
+            });
         }
     }
 }

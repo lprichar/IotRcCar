@@ -20,14 +20,13 @@ namespace IotHelloWorld
     /// <summary>
     /// An empty page that can be used on its own or navigated to within a Frame.
     /// </summary>
-    public sealed partial class MainPage : Page
+    public sealed partial class MainPage
     {
         private DispatcherTimer timer;
         private int LED_PIN = 21;
         private GpioPinValue pinValue;
         private PwmPin motorPin;
-        private GpioPin _pin;
-        private PwmPin _pin27;
+        private GpioPin _servoPin;
         double RestingPulseLegnth = 0;
         private const int DelayBetweenPulsesInMs = 5; // the documentation said 25-50ms, but smaller numbers seemed smoother
         const int MinPulseInMicroseconds = 700;
@@ -74,10 +73,6 @@ namespace IotHelloWorld
                 var pwmController = pwmControllers[1]; // the on-device controller
                 pwmController.SetDesiredFrequency(50); // try to match 50Hz
 
-                _pin27 = pwmController.OpenPin(22);
-                _pin27.SetActiveDutyCyclePercentage(.25);
-                _pin27.Start();
-
                 motorPin = pwmController.OpenPin(5);
                 motorPin.SetActiveDutyCyclePercentage(RestingPulseLegnth);
                 motorPin.Start();
@@ -95,32 +90,11 @@ namespace IotHelloWorld
                 StatusMessage.Text = "There is no GPIO controller on this device.";
                 return;
             }
-            _pin = gpioController.OpenPin(22);
-            _pin.SetDriveMode(GpioPinDriveMode.Output);
-            _pin.Write(GpioPinValue.High);
+            _servoPin = gpioController.OpenPin(22);
+            _servoPin.SetDriveMode(GpioPinDriveMode.Output);
+            _servoPin.Write(GpioPinValue.High);
             await Task.Delay(500);
-            _pin.Write(GpioPinValue.Low);
-        }
-
-        private void LedBrightness_OnValueChanged(object sender, RangeBaseValueChangedEventArgs e)
-        {
-            _pin27.SetActiveDutyCyclePercentage(ledBrightness.Value * .01);
-            ledPercent.Text = ledBrightness.Value + "%";
-        }
-        private async void ClickMe_Click(object sender, RoutedEventArgs e)
-        {
-            _pin.Write(GpioPinValue.High);
-
-            for (double percent = 0; percent <= 1; percent += .01)
-            {
-                _pin27.SetActiveDutyCyclePercentage(percent);
-                await Task.Delay(20);
-            }
-            for (double percent = 1; percent >= 0; percent -= .01)
-            {
-                _pin27.SetActiveDutyCyclePercentage(percent);
-                await Task.Delay(20);
-            }
+            _servoPin.Write(GpioPinValue.Low);
         }
 
         private void MotorSpeed_OnValueChanged(object sender, RangeBaseValueChangedEventArgs e)
@@ -150,9 +124,9 @@ namespace IotHelloWorld
                 {
                     pulseStopwatch.Reset();
                     pulseStopwatch.Start();
-                    _pin.Write(GpioPinValue.High);
+                    _servoPin.Write(GpioPinValue.High);
                     while (pulseStopwatch.ElapsedTicks < pulseDurationInTics) { }
-                    _pin.Write(GpioPinValue.Low);
+                    _servoPin.Write(GpioPinValue.Low);
                     await Task.Delay(DelayBetweenPulsesInMs);
                 }
             }, WorkItemPriority.High);
