@@ -1,18 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
+using System.Net.Http;
 using System.Threading.Tasks;
-using Windows.Foundation;
-using Windows.Foundation.Collections;
-using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
-using Windows.UI.Xaml.Controls.Primitives;
-using Windows.UI.Xaml.Data;
-using Windows.UI.Xaml.Input;
-using Windows.UI.Xaml.Media;
-using Windows.UI.Xaml.Navigation;
 using Windows.Gaming.Input;
 using Windows.UI.Core;
 
@@ -23,12 +12,11 @@ namespace XBoxCarController
     /// <summary>
     /// An empty page that can be used on its own or navigated to within a Frame.
     /// </summary>
-    public sealed partial class MainPage : Page
+    public sealed partial class MainPage
     {
         public MainPage()
         {
-            this.InitializeComponent();
-            Loaded += OnLoaded;
+            InitializeComponent();
             Gamepad.GamepadAdded += GamepadOnGamepadAdded;
         }
 
@@ -36,30 +24,39 @@ namespace XBoxCarController
         {
             await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, async () =>
             {
-                await DisplayGamepadData(gamepad);
+                try
+                {
+                    await DisplayGamepadData(gamepad);
+                }
+                catch (Exception ex)
+                {
+                    MyTextBlock.Text = ex.ToString();
+                }
             });
-        }
-
-        private async void OnLoaded(object sender, RoutedEventArgs routedEventArgs)
-        {
-            var controller = Gamepad.Gamepads.FirstOrDefault();
-            if (controller == null)
-            {
-                MyTextBlock.Text = "No gamepad detected";
-                return;
-            }
-            await DisplayGamepadData(controller);
         }
 
         private async Task DisplayGamepadData(Gamepad controller)
         {
+            double lastX = 0;
+            double lastY = 0;
             while (true)
             {
                 var reading = controller.GetCurrentReading();
-                var leftThumbstickX = reading.LeftThumbstickX;
-                var leftThumbstickY = reading.LeftThumbstickY;
-                MyTextBlock.Text = leftThumbstickX + " " + leftThumbstickY;
-                await Task.Delay(100);
+                var thumbstickX = reading.LeftThumbstickX;
+                var thumbstickY = reading.LeftThumbstickY;
+
+                if (lastX != thumbstickX || lastY != thumbstickY)
+                {
+                    int throttlePercent = (int)(Math.Max(0, thumbstickY)*100);
+                    int servoPercent = (int)(((thumbstickX + 1)/2)*100);
+                    var httpClient = new HttpClient();
+                    var url = $"http://leesraspi3:8001/Default.html?direction={servoPercent}&motorSpeed={throttlePercent}";
+                    await httpClient.GetAsync(url);
+                    MyTextBlock.Text = throttlePercent + " " + servoPercent;
+                }
+                await Task.Delay(500);
+                lastX = thumbstickX;
+                lastY = thumbstickY;
             }
         }
     }
