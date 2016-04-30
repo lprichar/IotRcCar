@@ -26,7 +26,7 @@ namespace IotHelloWorld
         private int LED_PIN = 21;
         private GpioPinValue pinValue;
         private PwmPin motorPin;
-        private GpioPin _servoPin;
+        private PwmPin _servoPin;
         private int _servoPinNum = 26;
         private int _motorPinNumber = 21;
         private int _ledPinNumber = 4;
@@ -81,7 +81,9 @@ namespace IotHelloWorld
                 motorPin.SetActiveDutyCyclePercentage(RestingPulseLegnth);
                 motorPin.Start();
 
-
+                _servoPin = pwmController.OpenPin(_servoPinNum);
+                _servoPin.SetActiveDutyCyclePercentage(0);
+                _servoPin.Start();
             }
             else
             {
@@ -94,9 +96,6 @@ namespace IotHelloWorld
                 StatusMessage.Text = "There is no GPIO controller on this device.";
                 return;
             }
-            _servoPin = gpioController.OpenPin(_servoPinNum);
-            _servoPin.SetDriveMode(GpioPinDriveMode.Output);
-            _servoPin.Write(GpioPinValue.Low);
 
             _ledPin = gpioController.OpenPin(_ledPinNumber);
             _ledPin.SetDriveMode(GpioPinDriveMode.Output);
@@ -115,33 +114,17 @@ namespace IotHelloWorld
             motorPin.SetActiveDutyCyclePercentage(percent);
         }
 
-        private async Task ServoGoTo(double rotationPercent)
+        private async Task ServoGoTo(double rotationPercentTo100)
         {
-            long microsecondsDelay = RotationToMicrosecondsDelay(rotationPercent);
-            var ticsInASecond = Stopwatch.Frequency;
-            var ticsInAMicrosecond = ticsInASecond / (1000L * 1000L);
-            var pulseDurationInTics = microsecondsDelay * ticsInAMicrosecond;
+            var maxPwmPercent = .4;
 
-            await ThreadPool.RunAsync(async source =>
-            {
-                var operationStopwatch = Stopwatch.StartNew();
-                var pulseStopwatch = new Stopwatch();
-                while (operationStopwatch.ElapsedMilliseconds < 500)
-                {
-                    pulseStopwatch.Reset();
-                    pulseStopwatch.Start();
-                    _servoPin.Write(GpioPinValue.High);
-                    while (pulseStopwatch.ElapsedTicks < pulseDurationInTics) { }
-                    _servoPin.Write(GpioPinValue.Low);
-                    await Task.Delay(DelayBetweenPulsesInMs);
-                }
-            }, WorkItemPriority.High);
-        }
+            var rotationPercent = rotationPercentTo100 * .01;
 
-        private static long RotationToMicrosecondsDelay(double percent)
-        {
-            var percentAsDouble = percent * .01;
-            return (long)(percentAsDouble * (MaxPulseInMicroseconds - MinPulseInMicroseconds)) + MinPulseInMicroseconds;
+            var percentToSet = rotationPercent*maxPwmPercent;
+
+            _servoPin.SetActiveDutyCyclePercentage(percentToSet);
+            await Task.Delay(500);
+            _servoPin.SetActiveDutyCyclePercentage(0);
         }
 
         private async void ServoRotation_OnValueChanged(object sender, RangeBaseValueChangedEventArgs e)
